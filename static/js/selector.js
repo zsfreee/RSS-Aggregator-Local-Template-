@@ -614,22 +614,55 @@ document.addEventListener('DOMContentLoaded', function() {
     function enterSelectionMode(target) {
         isSelectionMode = true;
         currentSelectionTarget = target;
-        previewInfo.innerHTML = `
+        
+        // Делаем кнопку активной
+        const targetButton = document.querySelector(`.select-element-btn[data-target="${target}"]`);
+        if (targetButton) {
+            targetButton.classList.remove('btn-outline-primary');
+            targetButton.classList.add('btn-primary', 'active');
+        }
+        
+        // Создаем содержимое
+        const content = document.createElement('div');
+        content.innerHTML = `
             <i class="fas fa-crosshairs"></i> 
             <span>Выберите элемент для <strong>${getTargetName(target)}</strong>. Кликните на нужный элемент на странице.</span>
-            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="cancel-selection">
-                Отмена
-            </button>
         `;
         
-        // Добавляем обработчик для кнопки отмены
-        document.getElementById('cancel-selection').addEventListener('click', exitSelectionMode);
+        // Создаем кнопку отмены
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-sm btn-outline-secondary ms-2';
+        cancelBtn.id = 'cancel-selection';
+        cancelBtn.textContent = 'Отмена';
+        cancelBtn.addEventListener('click', function() {
+            // При отмене сбрасываем стиль кнопки
+            if (targetButton) {
+                targetButton.classList.remove('btn-primary', 'active');
+                targetButton.classList.add('btn-outline-primary');
+            }
+            exitSelectionMode();
+        });
+        
+        // Очищаем previewInfo и добавляем новые элементы
+        previewInfo.innerHTML = '';
+        previewInfo.appendChild(content);
+        previewInfo.appendChild(cancelBtn);
     }
-    
+
     /**
      * Выход из режима выбора элемента
      */
     function exitSelectionMode() {
+        // Сбрасываем стиль кнопки, если она была активирована
+        if (currentSelectionTarget) {
+            const targetButton = document.querySelector(`.select-element-btn[data-target="${currentSelectionTarget}"]`);
+            if (targetButton) {
+                targetButton.classList.remove('btn-primary', 'active');
+                targetButton.classList.add('btn-outline-primary');
+            }
+        }
+
         isSelectionMode = false;
         currentSelectionTarget = null;
         previewInfo.innerHTML = `
