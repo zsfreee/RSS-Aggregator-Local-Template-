@@ -115,7 +115,7 @@ def update_feed(feed):
                 # Если published - строка, преобразуем ее в datetime
                 if isinstance(entry['published'], str):
                     try:
-                        from datetime import datetime
+                        # Используем datetime, который уже импортирован в начале файла
                         published = datetime.strptime(entry['published'], '%Y-%m-%d %H:%M:%S')
                     except:
                         published = datetime.utcnow()
