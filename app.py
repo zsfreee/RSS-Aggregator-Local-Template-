@@ -141,12 +141,20 @@ def manual_update_feed(feed_id):
     feed = Feed.query.get_or_404(feed_id)
     success = update_feed(feed)
     
+    # Получаем URL, с которого пришел запрос
+    referer = request.referrer
+    
     if success:
         flash('Лента успешно обновлена!', 'success')
     else:
         flash('Не удалось обновить ленту. Проверьте настройки.', 'danger')
-        
-    return redirect(url_for('index'))
+    
+    # Если известен referer и он относится к нашему приложению, возвращаемся туда
+    if referer and referer.startswith(request.host_url):
+        return redirect(referer)
+    
+    # Иначе перенаправляем на страницу просмотра ленты
+    return redirect(url_for('view_feed', feed_id=feed_id))
 
 
 @app.route('/feeds/<int:feed_id>/view')
