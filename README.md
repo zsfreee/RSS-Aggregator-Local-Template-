@@ -82,4 +82,4 @@ python app.py
 - Chrome WebDriver для парсинга страниц с JavaScript (устанавливается автоматически)
 
 ### Лицензия
-MIT
+MIT License
