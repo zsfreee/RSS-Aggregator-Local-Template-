@@ -1,5 +1,5 @@
 /**
- * Скрипт для интерактивного выбора CSS селекторов (аналог rss.app)
+ * Скрипт для интерактивного выбора CSS селекторов
  */
 
 document.addEventListener('DOMContentLoaded', function() {
