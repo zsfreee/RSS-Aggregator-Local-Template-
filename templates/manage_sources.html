@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Управление источниками - {{ agg_feed.name }} - RSS Агрегатор{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Управление источниками для "{{ agg_feed.name }}"</h2>
+    <a href="{{ url_for('view_aggregated_feed', agg_id=agg_feed.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Назад
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Выберите источники для включения в ленту</h5>
+    </div>
+    <div class="card-body">
+        {% if all_feeds %}
+            <form method="POST">
+                <div class="row">
+                    {% for feed in all_feeds %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="feed_ids" value="{{ feed.id }}" id="feed_{{ feed.id }}"
+                                            {% if feed.id in included_feed_ids %}checked{% endif %}>
+                                        <label class="form-check-label" for="feed_{{ feed.id }}">
+                                            <strong>{{ feed.name }}</strong>
+                                            {% if feed.feed_type == 'rss' %}
+                                                <span class="badge bg-info">RSS</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Парсинг</span>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                    <p class="text-muted mt-2 small">{{ feed.url }}</p>
+                                    <p class="small">
+                                        Последнее обновление: {{ feed.last_updated.strftime('%d.%m.%Y %H:%M') if feed.last_updated else 'Никогда' }}<br>
+                                        Количество элементов: {{ feed.items.count() }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-4 d-flex justify-content-between">
+                    <div>
+                        <button type="button" class="btn btn-outline-primary" id="select-all">
+                            <i class="fas fa-check-square"></i> Выбрать все
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="deselect-all">
+                            <i class="fas fa-square"></i> Снять выбор
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Сохранить изменения
+                    </button>
+                </div>
+            </form>
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> У вас пока нет добавленных лент.
+                <a href="{{ url_for('add_feed') }}">Добавьте ленту</a>, чтобы включить её в агрегированную ленту.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllBtn = document.getElementById('select-all');
+        const deselectAllBtn = document.getElementById('deselect-all');
+        const checkboxes = document.querySelectorAll('input[name="feed_ids"]');
+        
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+        }
+        
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

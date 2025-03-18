@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - RSS Агрегатор{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h4>{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control") }}
+                        {% for error in form.name.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.url.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.url(class="form-control", id="feed_url") }}
+                            <button type="button" id="check_url" class="btn btn-outline-primary">
+                                <i class="fas fa-check"></i> Проверить
+                            </button>
+                        </div>
+                        <div id="url_feedback" class="form-text"></div>
+                        {% for error in form.url.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.feed_type.label(class="form-label") }}
+                        {{ form.feed_type(class="form-select") }}
+                        <div class="form-text">
+                            <ul>
+                                <li><strong>RSS-лента</strong> - для источников с готовыми RSS-лентами</li>
+                                <li><strong>Сайт без RSS</strong> - для парсинга сайтов без RSS (потребуется настройка селекторов)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.active(class="form-check-input") }}
+                        {{ form.active.label(class="form-check-label") }}
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.included_in_aggregate(class="form-check-input") }}
+                        {{ form.included_in_aggregate.label(class="form-check-label") }}
+                        <div class="form-text">Если включено, эта лента будет автоматически добавлена в новые агрегированные ленты</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">Отмена</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const feedTypeSelect = document.getElementById('feed_type');
+        const urlInput = document.getElementById('feed_url');
+        const checkUrlButton = document.getElementById('check_url');
+        const urlFeedback = document.getElementById('url_feedback');
+        
+        // Функция для проверки URL
+        checkUrlButton.addEventListener('click', function() {
+            const url = urlInput.value.trim();
+            const feedType = feedTypeSelect.value;
+            
+            if (!url) {
+                urlFeedback.innerHTML = '<div class="text-danger">Введите URL</div>';
+                return;
+            }
+            
+            // Показываем индикатор загрузки
+            urlFeedback.innerHTML = '<div class="text-info"><i class="fas fa-spinner fa-spin"></i> Проверка...</div>';
+            
+            // Если выбран тип RSS, проверяем валидность RSS-ленты
+            if (feedType === 'rss') {
+                fetch('{{ url_for("check_rss") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.valid) {
+                        urlFeedback.innerHTML = `
+                            <div class="text-success">
+                                <i class="fas fa-check-circle"></i> Валидная RSS-лента
+                                <ul class="mt-1">
+                                    <li><strong>Название:</strong> ${data.title}</li>
+                                    <li><strong>Элементов:</strong> ${data.item_count}</li>
+                                </ul>
+                            </div>
+                        `;
+                        
+                        // Если название ленты не задано, предлагаем использовать название из RSS
+                        const nameInput = document.getElementById('name');
+                        if (!nameInput.value && data.title) {
+                            nameInput.value = data.title;
+                        }
+                    } else {
+                        urlFeedback.innerHTML = `
+                            <div class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i> ${data.message || 'Не удалось распознать RSS-ленту'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    urlFeedback.innerHTML = `
+                        <div class="text-danger">
+                            <i class="fas fa-times-circle"></i> Ошибка при проверке URL
+                        </div>
+                    `;
+                    console.error('Error:', error);
+                });
+            } else {
+                // Для обычных сайтов просто проверяем доступность
+                fetch(url, { method: 'HEAD', mode: 'no-cors' })
+                .then(() => {
+                    urlFeedback.innerHTML = `
+                        <div class="text-success">
+                            <i class="fas fa-check-circle"></i> URL доступен. После добавления вы сможете настроить селекторы для парсинга.
+                        </div>
+                    `;
+                })
+                .catch(() => {
+                    urlFeedback.innerHTML = `
+                        <div class="text-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Не удалось проверить доступность URL. Возможно, сайт блокирует запросы.
+                        </div>
+                    `;
+                });
+            }
+        });
+        
+        // Сбрасываем результат проверки при изменении типа ленты
+        feedTypeSelect.addEventListener('change', function() {
+            urlFeedback.innerHTML = '';
+        });
+    });
+</script>
+{% endblock %}

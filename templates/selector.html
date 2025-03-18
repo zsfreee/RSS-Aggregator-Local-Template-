@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Настройка селекторов - {{ feed.name }} - RSS Агрегатор{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Настройка селекторов для "{{ feed.name }}"</h2>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Назад
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Настройка селекторов</h5>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="autoMode" checked>
+                    <label class="form-check-label" for="autoMode">Авто режим</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="selector-form" method="POST">
+                    <div class="mb-3">
+                        <label for="container" class="form-label">Селектор контейнера</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="container" name="container" 
+                                   value="{{ selectors.container|default('') }}">
+                            <button type="button" class="btn btn-outline-primary select-element-btn" data-target="container">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Элемент, содержащий все статьи</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="item" class="form-label">Селектор элемента статьи</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="item" name="item" 
+                                   value="{{ selectors.item|default('') }}">
+                            <button type="button" class="btn btn-outline-primary select-element-btn" data-target="item">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Отдельная статья внутри контейнера</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Селектор заголовка</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ selectors.title|default('') }}">
+                            <button type="button" class="btn btn-outline-primary select-element-btn" data-target="title">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Заголовок статьи</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="link" class="form-label">Селектор ссылки</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="link" name="link" 
+                                   value="{{ selectors.link|default('') }}">
+                            <button type="button" class="btn btn-outline-primary select-element-btn" data-target="link">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Ссылка на полную статью</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Селектор описания</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="description" name="description" 
+                                   value="{{ selectors.description|default('') }}">
+                            <button type="button" class="btn btn-outline-primary select-element-btn" data-target="description">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Текст описания</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Селектор изображения</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="image" name="image" 
+                                   value="{{ selectors.image|default('') }}">
+                            <button type="button" class="btn btn-outline-primary select-element-btn" data-target="image">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Изображение статьи</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Селектор даты</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="date" name="date" 
+                                   value="{{ selectors.date|default('') }}">
+                            <button type="button" class="btn btn-outline-primary select-element-btn" data-target="date">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Дата публикации</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="use_selenium" name="use_selenium" 
+                               {% if selectors.use_selenium|default(false) %}checked{% endif %}>
+                        <label class="form-check-label" for="use_selenium">Использовать Selenium</label>
+                        <div class="form-text">Для сайтов с JavaScript-контентом</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-warning" id="reset-selectors">
+                            <i class="fas fa-undo"></i> Сбросить
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Сохранить и обновить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Предварительный просмотр</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="preview-url" value="{{ feed.url }}" placeholder="URL страницы">
+                        <button class="btn btn-primary" id="load-preview">
+                            <i class="fas fa-sync"></i> Загрузить
+                        </button>
+                    </div>
+                </div>
+                
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="interactive-tab" data-bs-toggle="tab" data-bs-target="#interactive" type="button" role="tab" aria-controls="interactive" aria-selected="true">Интерактивный режим</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button" role="tab" aria-controls="results" aria-selected="false">Результаты</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3" id="myTabContent">
+                    <div class="tab-pane fade show active" id="interactive" role="tabpanel" aria-labelledby="interactive-tab">
+                        <div id="preview-loading" class="text-center py-5" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <p class="mt-3">Загрузка предварительного просмотра...</p>
+                        </div>
+                        
+                        <div id="preview-error" class="alert alert-danger" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            <span id="error-message">Ошибка при загрузке предварительного просмотра.</span>
+                        </div>
+                        
+                        <div id="preview-info" class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            <span>Наведите курсор на элемент статьи и кликните для автоматического определения селекторов.</span>
+                        </div>
+                        
+                        <div id="preview-container" style="height: 600px; overflow: auto; border: 1px solid #dee2e6; border-radius: 0.25rem;">
+                            <iframe id="preview-iframe" style="width: 100%; height: 100%; border: none;"></iframe>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="results" role="tabpanel" aria-labelledby="results-tab">
+                        <div id="extracted-items">
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-newspaper fa-3x mb-3"></i>
+                                <p>Здесь появятся результаты извлечения данных после определения селекторов.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Найденные статьи</h5>
+            </div>
+            <div class="card-body">
+                <div id="matching-entries">
+                    <div class="text-center py-3 text-muted">
+                        <p>Статьи появятся здесь после настройки селекторов.</p>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-3">
+                    <button id="test-selectors" class="btn btn-success">
+                        <i class="fas fa-check-circle"></i> Проверить селекторы
+                    </button>
+                </div>
+
+                {% if feed.id %}
+                <div class="mt-3 text-center">
+                    <p>Ваша RSS-лента будет доступна по ссылке:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" value="{{ rss_url }}" readonly>
+                        <button class="btn btn-outline-primary copy-btn" type="button" data-clipboard-text="{{ rss_url }}">
+                            <i class="fas fa-copy"></i> Копировать
+                        </button>
+                    </div>
+                    <a href="{{ rss_url }}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-rss"></i> Открыть RSS-ленту
+                    </a>
+                </div>
+                {% endif %}
+                
+                <div class="text-end mt-2">
+                    <span id="entries-count" class="text-muted">Выбрано: 0 элементов</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/selector.js') }}"></script>
+{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* Стили для выделения элементов */
+    .selector-container {
+        outline: 3px solid rgba(255, 193, 7, 0.8) !important;
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+    
+    .selector-item {
+        outline: 3px solid rgba(13, 110, 253, 0.8) !important;
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+    
+    .selector-title {
+        outline: 3px solid rgba(25, 135, 84, 0.8) !important;
+        background-color: rgba(25, 135, 84, 0.1) !important;
+    }
+    
+    .selector-link {
+        outline: 3px solid rgba(13, 202, 240, 0.8) !important;
+        background-color: rgba(13, 202, 240, 0.1) !important;
+    }
+    
+    .selector-description {
+        outline: 3px solid rgba(108, 117, 125, 0.8) !important;
+        background-color: rgba(108, 117, 125, 0.1) !important;
+    }
+    
+    .selector-image {
+        outline: 3px solid rgba(220, 53, 69, 0.8) !important;
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+    
+    .selector-date {
+        outline: 3px solid rgba(111, 66, 193, 0.8) !important;
+        background-color: rgba(111, 66, 193, 0.1) !important;
+    }
+    
+    .hover-highlight {
+        outline: 2px dashed #fd7e14 !important;
+        background-color: rgba(253, 126, 20, 0.1) !important;
+        cursor: pointer !important;
+    }
+    
+    /* Стили для карточек статей */
+    .entry-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+    
+    .entry-header {
+        padding: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+    }
+    
+    .entry-body {
+        padding: 0.75rem;
+    }
+    
+    .entry-footer {
+        padding: 0.75rem;
+        border-top: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .entry-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.25rem;
+    }
+    
+    #matching-entries .list-group-item {
+        cursor: pointer;
+    }
+    
+    #matching-entries .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .entry-url {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}

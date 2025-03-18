@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Панель управления - RSS Агрегатор{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2>Панель управления</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        <form method="POST" action="{{ url_for('trigger_update_all') }}" class="d-inline">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-sync"></i> Обновить все ленты
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Мои ленты</h4>
+                <a href="{{ url_for('add_feed') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Добавить ленту
+                </a>
+            </div>
+            <div class="card-body">
+                {% if feeds %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Название</th>
+                                    <th>Тип</th>
+                                    <th>Статус</th>
+                                    <th>Обновлено</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feed in feeds %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('view_feed', feed_id=feed.id) }}">
+                                            {{ feed.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if feed.feed_type == 'rss' %}
+                                            <span class="badge bg-info">RSS</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Парсинг</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if feed.active %}
+                                            <span class="badge bg-success">Активна</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Неактивна</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ feed.last_updated.strftime('%d.%m.%Y %H:%M') if feed.last_updated else 'Никогда' }}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('edit_feed', feed_id=feed.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('view_feed', feed_id=feed.id) }}" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <form method="POST" action="{{ url_for('manual_update_feed', feed_id=feed.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-sync"></i>
+                                                </button>
+                                            </form>
+                                            {% if feed.feed_type == 'scrape' %}
+                                            <a href="{{ url_for('setup_selectors', feed_id=feed.id) }}" class="btn btn-sm btn-outline-warning">
+                                                <i class="fas fa-code"></i>
+                                            </a>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal{{ feed.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Modal for delete confirmation -->
+                                        <div class="modal fade" id="deleteModal{{ feed.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Подтверждение удаления</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Вы уверены, что хотите удалить ленту "{{ feed.name }}"?</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                        <form method="POST" action="{{ url_for('delete_feed', feed_id=feed.id) }}">
+                                                            <button type="submit" class="btn btn-danger">Удалить</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center">У вас пока нет добавленных лент. <a href="{{ url_for('add_feed') }}">Добавьте первую ленту</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Агрегированные ленты</h4>
+                <a href="{{ url_for('add_aggregated_feed') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Создать агрегированную ленту
+                </a>
+            </div>
+            <div class="card-body">
+                {% if aggregated_feeds %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Название</th>
+                                    <th>Статус</th>
+                                    <th>Обновлено</th>
+                                    <th>RSS URL</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for agg_feed in aggregated_feeds %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('view_aggregated_feed', agg_id=agg_feed.id) }}">
+                                            {{ agg_feed.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if agg_feed.active %}
+                                            <span class="badge bg-success">Активна</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Неактивна</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ agg_feed.last_updated.strftime('%d.%m.%Y %H:%M') if agg_feed.last_updated else 'Никогда' }}
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control form-control-sm" 
+                                                    value="{{ url_for('get_public_feed', slug=agg_feed.slug, _external=True) }}" 
+                                                    readonly>
+                                            <button class="btn btn-outline-secondary copy-btn" type="button" 
+                                                    data-clipboard-text="{{ url_for('get_public_feed', slug=agg_feed.slug, _external=True) }}">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('edit_aggregated_feed', agg_id=agg_feed.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('view_aggregated_feed', agg_id=agg_feed.id) }}" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('manage_aggregated_feed_sources', agg_id=agg_feed.id) }}" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-cog"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteAggModal{{ agg_feed.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Modal for delete confirmation -->
+                                        <div class="modal fade" id="deleteAggModal{{ agg_feed.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Подтверждение удаления</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Вы уверены, что хотите удалить агрегированную ленту "{{ agg_feed.name }}"?</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                        <form method="POST" action="{{ url_for('delete_aggregated_feed', agg_id=agg_feed.id) }}">
+                                                            <button type="submit" class="btn btn-danger">Удалить</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center">У вас пока нет агрегированных лент. <a href="{{ url_for('add_aggregated_feed') }}">Создайте первую агрегированную ленту</a>.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализация ClipboardJS для копирования URL
+        var clipboard = new ClipboardJS('.copy-btn');
+        
+        clipboard.on('success', function(e) {
+            // Визуальное подтверждение копирования
+            const button = e.trigger;
+            const originalHtml = button.innerHTML;
+            
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-outline-secondary');
+            
+            setTimeout(function() {
+                button.innerHTML = originalHtml;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-outline-secondary');
+            }, 2000);
+            
+            e.clearSelection();
+        });
+    });
+</script>
+{% endblock %}
